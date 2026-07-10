@@ -38,6 +38,54 @@ const TYPE_ALIASES: Record<string, string[]> = {
 };
 const resolveTypes = (filter: string) => TYPE_ALIASES[filter] ?? [filter];
 
+/**
+ * UI-concept synonyms. Agents phrase requests differently from how libraries
+ * name components ("modal" vs "dialog", "dropdown" vs "select"). We expand each
+ * query term with its group so the right component surfaces regardless of
+ * wording. Synonym matches score LOWER than direct matches (see scoreItem), so
+ * an exact hit always ranks above a synonym hit.
+ */
+const SYNONYM_GROUPS: string[][] = [
+  ["modal", "dialog", "popup", "overlay", "lightbox"],
+  ["dropdown", "select", "combobox", "listbox"],
+  ["menu", "dropdownmenu", "contextmenu"],
+  ["toast", "notification", "snackbar", "sonner"],
+  ["alert", "banner", "callout", "announcement"],
+  ["accordion", "collapsible", "disclosure"],
+  ["tooltip", "hint"],
+  ["popover", "flyout"],
+  ["carousel", "gallery", "slideshow"],
+  ["spinner", "loader", "loading"],
+  ["skeleton", "placeholder", "shimmer"],
+  ["switch", "toggle"],
+  ["badge", "chip", "tag", "pill"],
+  ["avatar", "profile"],
+  ["datepicker", "calendar", "datefield"],
+  ["table", "datatable", "datagrid"],
+  ["input", "textfield", "textbox", "field"],
+  ["navbar", "navigation", "nav", "menubar"],
+  ["sidebar", "drawer", "sheet"],
+  ["breadcrumb", "breadcrumbs"],
+  ["pagination", "pager"],
+  ["rating", "stars"],
+  ["chart", "graph"],
+  ["button", "btn", "cta"],
+  ["stepper", "steps", "wizard"],
+  ["slider", "range"],
+  ["kanban", "board"],
+];
+
+const SYNONYMS: Map<string, string[]> = (() => {
+  const m = new Map<string, Set<string>>();
+  for (const group of SYNONYM_GROUPS) {
+    for (const word of group) {
+      if (!m.has(word)) m.set(word, new Set());
+      for (const other of group) if (other !== word) m.get(word)!.add(other);
+    }
+  }
+  return new Map([...m].map(([k, v]) => [k, [...v]]));
+})();
+
 interface Indexed {
   item: RegistryItem;
   nameTokens: string[];
@@ -61,28 +109,42 @@ function indexItem(item: RegistryItem): Indexed {
   };
 }
 
+/** Best score (0..6) for a single term against one item's fields. */
+function termBest(idx: Indexed, term: string): number {
+  let best = 0;
+  if (idx.nameTokens.includes(term)) best = Math.max(best, 6);
+  else if (idx.nameTokens.some((t) => t.startsWith(term))) best = Math.max(best, 4);
+
+  if (idx.titleTokens.includes(term)) best = Math.max(best, 4);
+  else if (idx.titleTokens.some((t) => t.startsWith(term))) best = Math.max(best, 3);
+
+  if (idx.descTokens.includes(term)) best = Math.max(best, 2);
+  if (idx.extraTokens.includes(term)) best = Math.max(best, 2);
+
+  // Weak fallback so compound queries still connect (e.g. "datepicker" ~ "date-picker").
+  if (best === 0 && (idx.nameLower.includes(term) || idx.titleLower.includes(term))) best = 1;
+  return best;
+}
+
+/** Cap on how much a synonym match can contribute — always below a direct hit. */
+const SYNONYM_CAP = 3;
+
 /**
- * Token-aware scoring. The key win over naive substring matching: a query term
- * only scores high when it matches a WHOLE token, so "table" ranks c-table-1
- * far above c-sortable-1 (where "table" is merely a substring of "sortable").
+ * Token-aware scoring with synonym expansion. The key win over naive substring
+ * matching: a query term only scores high when it matches a WHOLE token, so
+ * "table" ranks c-table-1 far above c-sortable-1. Each term also matches its
+ * synonyms, but capped so an exact hit always outranks a synonym hit.
  */
-function scoreItem(idx: Indexed, terms: string[], phrase: string): number {
+function scoreItem(idx: Indexed, expanded: ExpandedTerm[], phrase: string): number {
   let score = 0;
-  for (const term of terms) {
-    let best = 0;
-    if (idx.nameTokens.includes(term)) best = Math.max(best, 6);
-    else if (idx.nameTokens.some((t) => t.startsWith(term))) best = Math.max(best, 4);
-
-    if (idx.titleTokens.includes(term)) best = Math.max(best, 4);
-    else if (idx.titleTokens.some((t) => t.startsWith(term))) best = Math.max(best, 3);
-
-    if (idx.descTokens.includes(term)) best = Math.max(best, 2);
-    if (idx.extraTokens.includes(term)) best = Math.max(best, 2);
-
-    // Weak fallback so compound queries still connect (e.g. "datepicker" ~ "date-picker").
-    if (best === 0 && (idx.nameLower.includes(term) || idx.titleLower.includes(term))) best = 1;
-
-    score += best;
+  for (const { primary, syns } of expanded) {
+    let s = termBest(idx, primary);
+    if (s === 0 && syns.length) {
+      let synBest = 0;
+      for (const syn of syns) synBest = Math.max(synBest, termBest(idx, syn));
+      s = Math.min(synBest, SYNONYM_CAP);
+    }
+    score += s;
   }
   // Phrase bonuses: exact intent expressed in title/name.
   if (phrase.length > 2) {
@@ -90,6 +152,11 @@ function scoreItem(idx: Indexed, terms: string[], phrase: string): number {
     if (idx.nameLower.includes(phrase.replace(/\s+/g, "-"))) score += 2;
   }
   return score;
+}
+
+interface ExpandedTerm {
+  primary: string;
+  syns: string[];
 }
 
 /**
@@ -109,6 +176,7 @@ export async function searchComponents(
     : REGISTRIES;
 
   const terms = tokenize(query);
+  const expanded: ExpandedTerm[] = terms.map((t) => ({ primary: t, syns: SYNONYMS.get(t) ?? [] }));
   const phrase = query.trim().toLowerCase();
   const wantTypes = typeFilter ? resolveTypes(typeFilter.toLowerCase()) : undefined;
   const hits: SearchHit[] = [];
@@ -123,7 +191,7 @@ export async function searchComponents(
     for (const item of index.items ?? []) {
       if (wantTypes && !wantTypes.includes(shortType(item.type))) continue;
       const idx = indexItem(item);
-      const score = scoreItem(idx, terms, phrase);
+      const score = scoreItem(idx, expanded, phrase);
       if (score > 0) {
         hits.push({
           registry: reg.id,

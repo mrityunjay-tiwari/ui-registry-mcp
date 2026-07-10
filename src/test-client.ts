@@ -49,6 +49,14 @@ async function main() {
   const topName: string = tableHits[0]?.name ?? "";
   check("top hit is a real table, not 'sortable'", topName.includes("table") && !topName.includes("sortable"), topName);
 
+  // --- search_components: synonym expansion ('modal' should surface 'dialog') ---
+  console.log("\n# search_components synonym expansion");
+  const modalHits = jsonOf(await client.callTool({ name: "search_components", arguments: { query: "modal", limit: 15 } }));
+  console.log("  top:", modalHits.slice(0, 5).map((h: any) => `${h.registry}/${h.name}`).join(", "));
+  check("'modal' surfaces a 'dialog' component via synonyms",
+    modalHits.some((h: any) => `${h.name} ${h.title ?? ""}`.toLowerCase().includes("dialog")),
+    JSON.stringify(modalHits.slice(0, 5).map((h: any) => h.name)));
+
   // --- search_components: type filter (ui spans registry:ui + registry:component) ---
   console.log("\n# search_components type filter");
   const uiOnly = jsonOf(await client.callTool({ name: "search_components", arguments: { query: "button", type: "ui", limit: 10 } }));

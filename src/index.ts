@@ -49,7 +49,7 @@ server.registerTool(
   {
     title: "Search components across libraries",
     description:
-      "Search all configured component libraries (or one) for components matching a natural-language query, e.g. 'pricing table', 'date picker', 'sidebar'. Returns a ranked, lightweight list (registry, name, type, title, description) — NOT the source. Pick the best match, then call get_component to fetch its real code.",
+      "Search all configured component libraries (or one) for components matching a natural-language query, e.g. 'pricing table', 'date picker', 'sidebar'. Synonym-aware: 'modal' also finds 'dialog', 'dropdown' finds 'select', etc. Returns a ranked, lightweight list (registry, name, type, title, description) — NOT the source. Pick the best match, then call get_component to fetch its real code.",
     inputSchema: {
       query: z.string().describe("What you need, e.g. 'pricing table' or 'avatar group'"),
       registry: z

@@ -40,7 +40,7 @@ registry, nothing else changes.
 | tool | what it does |
 | --- | --- |
 | **`list_registries`** | The libraries available (id, name, homepage). |
-| **`search_components(query, registry?, type?, limit?)`** | Token-ranked cross-library search. Returns names + one-liners, _not_ source, so it never floods context. `type` filters to `ui` / `block` / `component` / `hook` (`ui` spans single components across libraries). Empty result = `[]`. |
+| **`search_components(query, registry?, type?, limit?)`** | Token-ranked, **synonym-aware** cross-library search (`modal`→`dialog`, `dropdown`→`select`, …). Returns names + one-liners, _not_ source, so it never floods context. `type` filters to `ui` / `block` / `component` / `hook` (`ui` spans single components across libraries). Empty result = `[]`. |
 | **`get_component(registry, name)`** | Full current source (file contents), npm + registry dependencies, and the exact `npx shadcn add …` command. |
 | **`compare_components(query, registries?)`** | The best match for an intent from _each_ library, side by side: deps, file count, LOC, install command, source preview — so the agent picks the nicest, not the first. |
 | **`check_consistency(components[])`** | ⭐ Static design-clash analysis across a mixed set: inconsistent border-radius scales, hardcoded colors vs theme tokens, missing dark-mode variants, conflicting icon/animation libs. Findings come with concrete per-component pointers. |
@@ -92,7 +92,8 @@ consistency pass.
 
 ## Next steps
 
-- Semantic / synonym search (embed titles) so "modal" finds "dialog".
+- Add more registries (Aceternity, Magic UI, Cult UI, …) — one entry each.
 - `check_consistency`: add spacing-scale + font-size dimensions and an
   auto-suggested token mapping.
 - Publish as an `npx ui-registry-mcp` bin.
+- Embedding-based search (beyond the curated synonym list) for fuzzier intents.
