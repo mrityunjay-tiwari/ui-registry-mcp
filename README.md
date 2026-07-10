@@ -45,30 +45,30 @@ registry, nothing else changes.
 | **`compare_components(query, registries?)`** | The best match for an intent from _each_ library, side by side: deps, file count, LOC, install command, source preview — so the agent picks the nicest, not the first. |
 | **`check_consistency(components[])`** | ⭐ Static design-clash analysis across a mixed set: inconsistent border-radius scales, hardcoded colors vs theme tokens (**with auto-suggested remappings** like `text-zinc-900 → text-foreground`), dark-mode risk (only flags components that hardcode colors *and* lack `dark:` — token-based ones count as dark-capable), arbitrary spacing/font values off the scale, and conflicting icon/animation libs. Findings come with concrete per-component pointers. |
 
-## Setup
-
-```bash
-npm install
-npm run build
-```
-
-### Live sanity checks
-
-```bash
-node dist/smoke.js        # hits the registries, prints index sizes + a sample fetch
-node dist/test-client.js  # full MCP handshake + assertions across all 5 tools
-```
-
 ## Connect to Claude Code
 
-Create `.mcp.json` in your project (or use `claude mcp add`):
+**Published (recommended)** — no clone, no build. Add to `.mcp.json` in your
+project (or run `claude mcp add ui-registry -- npx -y ui-registry-mcp`):
+
+```json
+{
+  "mcpServers": {
+    "ui-registry": {
+      "command": "npx",
+      "args": ["-y", "ui-registry-mcp"]
+    }
+  }
+}
+```
+
+**From a local clone** (for development):
 
 ```json
 {
   "mcpServers": {
     "ui-registry": {
       "command": "node",
-      "args": ["E:/Web Development/Harkirat/mcp/dist/index.js"]
+      "args": ["/absolute/path/to/ui-registry-mcp/dist/index.js"]
     }
   }
 }
@@ -81,6 +81,15 @@ Then just ask, e.g.:
 
 The agent will search, (compare,) fetch real source, edit as needed, and run a
 consistency pass.
+
+## Local development
+
+```bash
+npm install
+npm run build
+npm test          # full MCP handshake + assertions across all 5 tools
+npm run smoke     # hits the registries, prints index sizes + a sample fetch
+```
 
 ## How it works
 
@@ -99,5 +108,4 @@ consistency pass.
 
 - Add more registries (Aceternity, Magic UI, Cult UI, …) — one entry each.
 - `check_consistency`: a "scan my local project" mode (audit already-installed files).
-- Publish as an `npx ui-registry-mcp` bin.
 - Embedding-based search (beyond the curated synonym list) for fuzzier intents.

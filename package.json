@@ -1,19 +1,51 @@
 {
   "name": "ui-registry-mcp",
   "version": "0.1.0",
-  "description": "MCP server that gives coding agents live access to shadcn-style component registries (reui, kokonut, ...) so they compose UI from real components instead of rebuilding them.",
+  "description": "MCP server that gives coding agents live access to shadcn-style component registries (reui, kokonut, kibo, ...) so they discover, compare, fetch, and design-check real UI components instead of rebuilding them.",
   "type": "module",
   "bin": {
     "ui-registry-mcp": "dist/index.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE"
   ],
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
     "start": "node dist/index.js",
-    "smoke": "node --experimental-strip-types src/smoke.ts"
+    "prepare": "npm run build",
+    "smoke": "npm run build && node dist/smoke.js",
+    "test": "npm run build && node dist/test-client.js"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "shadcn",
+    "shadcn-ui",
+    "ui-components",
+    "component-registry",
+    "reui",
+    "kokonut",
+    "kibo",
+    "claude",
+    "ai",
+    "react",
+    "tailwind"
+  ],
+  "author": "mrityunjay-tiwari",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mrityunjay-tiwari/ui-registry-mcp.git"
+  },
+  "homepage": "https://github.com/mrityunjay-tiwari/ui-registry-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/mrityunjay-tiwari/ui-registry-mcp/issues"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.0",
