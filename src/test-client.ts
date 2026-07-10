@@ -57,6 +57,14 @@ async function main() {
     modalHits.some((h: any) => `${h.name} ${h.title ?? ""}`.toLowerCase().includes("dialog")),
     JSON.stringify(modalHits.slice(0, 5).map((h: any) => h.name)));
 
+  // --- search_components: domain-intent synonyms ('subscription' -> pricing/tier) ---
+  console.log("\n# search_components domain-intent synonyms");
+  const subHits = jsonOf(await client.callTool({ name: "search_components", arguments: { query: "subscription", limit: 20 } }));
+  console.log("  sample:", subHits.slice(0, 5).map((h: any) => `${h.registry}/${h.name}`).join(", "));
+  check("'subscription' reaches pricing/tier/plan/billing components via synonyms",
+    subHits.some((h: any) => /pricing|tier|plan|billing/i.test(`${h.name} ${h.title ?? ""}`)),
+    JSON.stringify(subHits.slice(0, 5).map((h: any) => h.title)));
+
   // --- search_components: type filter (ui spans registry:ui + registry:component) ---
   console.log("\n# search_components type filter");
   const uiOnly = jsonOf(await client.callTool({ name: "search_components", arguments: { query: "button", type: "ui", limit: 10 } }));
@@ -66,6 +74,20 @@ async function main() {
     JSON.stringify(uiOnly.map((h: any) => h.type)));
   const blockOnly = jsonOf(await client.callTool({ name: "search_components", arguments: { query: "button", type: "block", limit: 5 } }));
   check("type=block excludes ui/component", blockOnly.every((h: any) => h.type === "registry:block"));
+
+  // --- search_components: verified mode drops premium/gated hits ---
+  console.log("\n# search_components verified mode");
+  const verifiedHits = jsonOf(await client.callTool({ name: "search_components", arguments: { query: "stats", verified: true, limit: 3 } }));
+  console.log("  verified:", verifiedHits.map((h: any) => `${h.registry}/${h.name}`).join(", ") || "(none)");
+  check("verified results are all marked available", verifiedHits.every((h: any) => h.available === true),
+    JSON.stringify(verifiedHits.map((h: any) => h.available)));
+  // Each verified hit must actually fetch (no 401).
+  let allFetch = true;
+  for (const h of verifiedHits) {
+    const r = await client.callTool({ name: "get_component", arguments: { registry: h.registry, name: h.name } });
+    if ((r as any).isError) allFetch = false;
+  }
+  check("every verified hit actually installs (no 401)", verifiedHits.length > 0 && allFetch);
 
   // --- search_components: registry scoping ---
   const kokoOnly = jsonOf(await client.callTool({ name: "search_components", arguments: { query: "card", registry: "kokonut", limit: 10 } }));
@@ -106,6 +128,22 @@ async function main() {
     `analyzed=${report.analyzed?.length}/${set.length} missing=${JSON.stringify(report.missing)}`);
   check("findings is an array with valid shape", Array.isArray(report.findings) &&
     report.findings.every((f: any) => f.dimension && f.severity && f.message && f.detail));
+
+  // v2: color-tokens finding carries auto-suggested token remappings.
+  const colorFinding = report.findings.find((f: any) => f.dimension === "color-tokens");
+  check("color-tokens finding includes suggestions", !colorFinding || (colorFinding.suggestions && Object.keys(colorFinding.suggestions).length > 0),
+    JSON.stringify(colorFinding?.suggestions));
+
+  // v2: dark-mode must never flag a purely token-based component (false-positive fix).
+  console.log("\n# check_consistency v2: dark-mode false-positive fix (token-only set)");
+  const tokenOnly = jsonOf(await client.callTool({ name: "check_consistency", arguments: { components: [
+    { registry: "reui", name: "c-card-1" },
+    { registry: "reui", name: "c-table-1" },
+  ] } }));
+  console.log("  findings:", tokenOnly.findings.map((f: any) => f.dimension).join(", ") || "none");
+  check("token-based components produce NO dark-mode finding", !tokenOnly.findings.some((f: any) => f.dimension === "dark-mode"),
+    JSON.stringify(tokenOnly.findings.map((f: any) => f.dimension)));
+  check("token-based components produce NO color-tokens finding", !tokenOnly.findings.some((f: any) => f.dimension === "color-tokens"));
 
   await client.close();
 

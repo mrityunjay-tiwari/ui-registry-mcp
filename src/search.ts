@@ -1,6 +1,6 @@
 import type { Registry } from "./registries.js";
 import { REGISTRIES, getRegistry } from "./registries.js";
-import { getIndex } from "./fetcher.js";
+import { getIndex, isAvailable } from "./fetcher.js";
 import type { RegistryItem } from "./types.js";
 
 export interface SearchHit {
@@ -10,6 +10,8 @@ export interface SearchHit {
   title?: string;
   description?: string;
   score: number;
+  /** Set only in verified mode: confirmed fetchable/installable (not premium-gated). */
+  available?: boolean;
 }
 
 /** Split a string into lowercased word tokens (drop separators like -, _, space, :). */
@@ -73,6 +75,21 @@ const SYNONYM_GROUPS: string[][] = [
   ["stepper", "steps", "wizard"],
   ["slider", "range"],
   ["kanban", "board"],
+  // Domain / page-section intents — how libraries actually name marketing and
+  // app sections. Lets "pricing" reach a "subscription" or "tier" component, etc.
+  ["pricing", "plan", "plans", "tier", "tiers", "billing", "subscription", "subscriptions", "upgrade"],
+  ["stats", "stat", "metric", "metrics", "kpi", "analytics"],
+  ["dashboard", "admin", "overview", "console"],
+  ["testimonial", "testimonials", "review", "reviews", "quote"],
+  ["hero", "landing", "banner", "jumbotron"],
+  ["auth", "login", "signin", "signup", "register", "authentication"],
+  ["checkout", "cart", "payment", "basket"],
+  ["profile", "account", "settings", "preferences"],
+  ["faq", "faqs", "questions"],
+  ["feature", "features", "benefits"],
+  ["team", "members", "people", "staff"],
+  ["contact", "enquiry", "support"],
+  ["gallery", "portfolio", "showcase"],
 ];
 
 const SYNONYMS: Map<string, string[]> = (() => {
@@ -164,12 +181,15 @@ interface ExpandedTerm {
  * a component — not the source. The agent then calls get_component on the winner.
  *
  * @param typeFilter optional short type: "ui" | "block" | "component" | "hook" ...
+ * @param verified  when true, fetch-check ranked hits and return only ones that
+ *                  are actually installable (drops premium/401-gated items).
  */
 export async function searchComponents(
   query: string,
   registryId?: string,
   limit = 20,
   typeFilter?: string,
+  verified = false,
 ): Promise<SearchHit[]> {
   const targets: Registry[] = registryId
     ? [getRegistry(registryId)].filter((r): r is Registry => Boolean(r))
@@ -205,7 +225,40 @@ export async function searchComponents(
     }
   }
 
-  return hits
-    .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name))
-    .slice(0, limit);
+  const ranked = hits.sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
+
+  if (!verified) return ranked.slice(0, limit);
+  return verifyHits(ranked, limit);
+}
+
+/** Max fetch-checks a verified search will make before giving up (cost guard). */
+const VERIFY_CAP = 40;
+/** How many availability checks run concurrently. */
+const VERIFY_CONCURRENCY = 8;
+
+/**
+ * Walk ranked hits top-down, checking installability in small concurrent
+ * batches, until we have `limit` confirmed-available hits or hit VERIFY_CAP.
+ * Gated (premium/401) hits are dropped; survivors are marked available:true.
+ */
+async function verifyHits(ranked: SearchHit[], limit: number): Promise<SearchHit[]> {
+  const available: SearchHit[] = [];
+  let checked = 0;
+
+  for (let i = 0; i < ranked.length && available.length < limit && checked < VERIFY_CAP; ) {
+    const batch = ranked.slice(i, i + VERIFY_CONCURRENCY);
+    i += batch.length;
+    checked += batch.length;
+    const results = await Promise.all(
+      batch.map(async (hit) => {
+        const reg = getRegistry(hit.registry);
+        const ok = reg ? await isAvailable(reg, hit.name) : false;
+        return ok ? { ...hit, available: true } : null;
+      }),
+    );
+    for (const r of results) {
+      if (r && available.length < limit) available.push(r);
+    }
+  }
+  return available;
 }

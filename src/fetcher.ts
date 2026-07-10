@@ -64,3 +64,19 @@ export async function getIndex(reg: Registry): Promise<RegistryIndex> {
 export async function getItem(reg: Registry, name: string): Promise<RegistryItem> {
   return fetchJson<RegistryItem>(componentUrl(reg, name));
 }
+
+/**
+ * Is this component actually fetchable/installable? Some registries list
+ * premium components in their index that return 401 when you try to pull them
+ * (e.g. reui pro blocks). A successful getItem means it's free to install; a
+ * 401/403/404 means it isn't. Result is cached (getItem caches), so a later
+ * get_component on an available item is free.
+ */
+export async function isAvailable(reg: Registry, name: string): Promise<boolean> {
+  try {
+    await getItem(reg, name);
+    return true;
+  } catch {
+    return false;
+  }
+}

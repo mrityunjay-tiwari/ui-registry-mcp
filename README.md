@@ -40,10 +40,10 @@ registry, nothing else changes.
 | tool | what it does |
 | --- | --- |
 | **`list_registries`** | The libraries available (id, name, homepage). |
-| **`search_components(query, registry?, type?, limit?)`** | Token-ranked, **synonym-aware** cross-library search (`modal`→`dialog`, `dropdown`→`select`, …). Returns names + one-liners, _not_ source, so it never floods context. `type` filters to `ui` / `block` / `component` / `hook` (`ui` spans single components across libraries). Empty result = `[]`. |
+| **`search_components(query, registry?, type?, verified?, limit?)`** | Token-ranked, **synonym-aware** cross-library search (`modal`→`dialog`, `dropdown`→`select`, …). Returns names + one-liners, _not_ source, so it never floods context. `type` filters to `ui` / `block` / `component` / `hook` (`ui` spans single components across libraries). `verified:true` fetch-checks results and returns only **installable** ones (drops premium/gated items — slower). Empty result = `[]`. |
 | **`get_component(registry, name)`** | Full current source (file contents), npm + registry dependencies, and the exact `npx shadcn add …` command. |
 | **`compare_components(query, registries?)`** | The best match for an intent from _each_ library, side by side: deps, file count, LOC, install command, source preview — so the agent picks the nicest, not the first. |
-| **`check_consistency(components[])`** | ⭐ Static design-clash analysis across a mixed set: inconsistent border-radius scales, hardcoded colors vs theme tokens, missing dark-mode variants, conflicting icon/animation libs. Findings come with concrete per-component pointers. |
+| **`check_consistency(components[])`** | ⭐ Static design-clash analysis across a mixed set: inconsistent border-radius scales, hardcoded colors vs theme tokens (**with auto-suggested remappings** like `text-zinc-900 → text-foreground`), dark-mode risk (only flags components that hardcode colors *and* lack `dark:` — token-based ones count as dark-capable), arbitrary spacing/font values off the scale, and conflicting icon/animation libs. Findings come with concrete per-component pointers. |
 
 ## Setup
 
@@ -89,11 +89,15 @@ consistency pass.
 - **Resilient**: transient/5xx failures retry with backoff (`UI_REGISTRY_RETRIES`,
   default 2); a single dead registry can't break a cross-library search.
 - **Browser-like `User-Agent`** gets past most bot-blocking.
+- **Premium components**: some registries list pro/gated components in their index
+  that return `401` when fetched (e.g. many reui `stats-*`, `faq-*`, `form-*`,
+  bare-named blocks; free examples are usually `c-*`-prefixed). `get_component`
+  reports these clearly, and `search_components(..., verified:true)` filters them
+  out so the agent only sees installable results.
 
 ## Next steps
 
 - Add more registries (Aceternity, Magic UI, Cult UI, …) — one entry each.
-- `check_consistency`: add spacing-scale + font-size dimensions and an
-  auto-suggested token mapping.
+- `check_consistency`: a "scan my local project" mode (audit already-installed files).
 - Publish as an `npx ui-registry-mcp` bin.
 - Embedding-based search (beyond the curated synonym list) for fuzzier intents.

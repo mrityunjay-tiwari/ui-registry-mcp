@@ -49,7 +49,7 @@ server.registerTool(
   {
     title: "Search components across libraries",
     description:
-      "Search all configured component libraries (or one) for components matching a natural-language query, e.g. 'pricing table', 'date picker', 'sidebar'. Synonym-aware: 'modal' also finds 'dialog', 'dropdown' finds 'select', etc. Returns a ranked, lightweight list (registry, name, type, title, description) — NOT the source. Pick the best match, then call get_component to fetch its real code.",
+      "Search all configured component libraries (or one) for components matching a natural-language query, e.g. 'pricing table', 'date picker', 'sidebar'. Synonym-aware: 'modal' also finds 'dialog', 'dropdown' finds 'select', etc. Returns a ranked, lightweight list (registry, name, type, title, description) — NOT the source. Pick the best match, then call get_component to fetch its real code. Set verified:true to return only components confirmed installable (filters out premium/gated ones that would 401).",
     inputSchema: {
       query: z.string().describe("What you need, e.g. 'pricing table' or 'avatar group'"),
       registry: z
@@ -60,11 +60,15 @@ server.registerTool(
         .string()
         .optional()
         .describe("Optional type filter: 'ui' (single component), 'block' (composed section), 'component', 'hook'"),
+      verified: z
+        .boolean()
+        .optional()
+        .describe("When true, fetch-check results and return only components that are actually installable (drops premium/gated items that would 401). Slower; use when you want guaranteed-installable results."),
       limit: z.number().int().positive().max(50).optional().describe("Max results (default 20)"),
     },
   },
-  async ({ query, registry, type, limit }) => {
-    const hits = await searchComponents(query, registry, limit ?? 20, type);
+  async ({ query, registry, type, verified, limit }) => {
+    const hits = await searchComponents(query, registry, limit ?? 20, type, verified ?? false);
     // Always return a JSON array (possibly empty) so callers can parse uniformly.
     // An empty array means "no matches — try broader terms or list_registries".
     return { content: [{ type: "text", text: JSON.stringify(hits, null, 2) }] };
@@ -112,12 +116,14 @@ server.registerTool(
       };
       return { content: [{ type: "text", text: JSON.stringify(payload, null, 2) }] };
     } catch (err) {
+      const msg = (err as Error).message;
+      const gated = /\b(401|403)\b/.test(msg);
+      const hint = gated
+        ? `This component appears to be premium/gated (not free to install). Re-run search_components with verified:true to get only installable alternatives.`
+        : `Confirm the name via search_components.`;
       return {
         content: [
-          {
-            type: "text",
-            text: `Failed to fetch "${name}" from ${reg.id}: ${(err as Error).message}. Confirm the name via search_components.`,
-          },
+          { type: "text", text: `Failed to fetch "${name}" from ${reg.id}: ${msg}. ${hint}` },
         ],
         isError: true,
       };
