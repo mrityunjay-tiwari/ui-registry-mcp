@@ -21,14 +21,25 @@ flags design clashes before they ship.
 
 ## Libraries (live)
 
-| id        | name       | source                    | approx. components |
-| --------- | ---------- | ------------------------- | ------------------ |
-| `reui`    | ReUI       | https://reui.io           | ~1534              |
-| `kokonut` | Kokonut UI | https://kokonutui.com     | ~40                |
-| `kibo`    | Kibo UI    | https://www.kibo-ui.com   | ~41                |
+| id           | name          | source                    | approx. | license / notes |
+| ------------ | ------------- | ------------------------- | ------- | --------------- |
+| `reui`       | ReUI          | https://reui.io           | ~1534   | MIT free comps; **some pro blocks 401** — use `verified:true` |
+| `aceternity` | Aceternity UI | https://ui.aceternity.com | 270 listed / **~116 free** | MIT free comps; **154 are Pro-gated (401)** — use `verified:true` |
+| `tailark`    | Tailark       | https://tailark.com       | ~210    | **MIT, free** (Pro is a separate product we don't serve) |
+| `smoothui`   | SmoothUI      | https://smoothui.dev      | ~107    | **MIT, free** |
+| `kibo`       | Kibo UI       | https://www.kibo-ui.com   | ~41     | **MIT, free** |
+| `kokonut`    | Kokonut UI    | https://kokonutui.com     | ~40     | **MIT, free** |
 
-Add more in [`src/registries.ts`](src/registries.ts) — one entry per shadcn
-registry, nothing else changes.
+**~2,200 components across 6 libraries.** Add more in
+[`src/registries.ts`](src/registries.ts) — one entry per shadcn registry,
+nothing else changes.
+
+> **Licensing & premium components.** The free components every registry serves
+> here are MIT-licensed and fine for commercial use, but ReUI and Aceternity also
+> list **premium/pro** components in their index that return `401` on fetch.
+> `list_registries` reports each registry's license + a `notes` warning, and
+> `search_components(..., verified:true)` returns only installable (free)
+> components. Always confirm a library's own license before shipping.
 
 > **Origin UI** is intentionally not enabled: `originui.com` serves an HTML app
 > page (Vercel deployment protection) for every `/r/*.json` path rather than

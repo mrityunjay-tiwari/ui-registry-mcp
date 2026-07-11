@@ -18,6 +18,10 @@ export interface Registry {
   base: string;
   /** Homepage / docs, surfaced to the agent for context. */
   homepage: string;
+  /** SPDX-ish license of the free components we serve. */
+  license: string;
+  /** Optional heads-up surfaced in list_registries (e.g. premium gating). */
+  notes?: string;
 }
 
 export const REGISTRIES: Registry[] = [
@@ -26,18 +30,49 @@ export const REGISTRIES: Registry[] = [
     name: "ReUI",
     base: "https://reui.io/r",
     homepage: "https://reui.io",
+    license: "MIT (free components)",
+    notes: "Has premium/pro blocks that 401 on fetch (often bare-named like stats-*, faq-*; free ones are usually c-*-prefixed). Use verified:true for installable results only.",
   },
   {
     id: "kokonut",
     name: "Kokonut UI",
     base: "https://kokonutui.com/r",
     homepage: "https://kokonutui.com",
+    license: "MIT",
   },
   {
     id: "kibo",
     name: "Kibo UI",
     base: "https://www.kibo-ui.com/r",
     homepage: "https://www.kibo-ui.com",
+    license: "MIT",
+  },
+  {
+    id: "tailark",
+    name: "Tailark",
+    base: "https://tailark.com/r",
+    homepage: "https://tailark.com",
+    // This is the free, MIT, open-source registry (github.com/tailark/blocks).
+    // Tailark Pro / Quartz is a separate paid product on pro.tailark.com that
+    // we intentionally do NOT pull from.
+    license: "MIT (free blocks; Tailark Pro is a separate paid product not served here)",
+  },
+  {
+    id: "smoothui",
+    name: "SmoothUI",
+    base: "https://smoothui.dev/r",
+    homepage: "https://smoothui.dev",
+    license: "MIT",
+  },
+  {
+    // Note: aceternity serves its index at /registry/registry.json and components
+    // at /registry/{name}.json, so the base is the "/registry" path (not "/r").
+    id: "aceternity",
+    name: "Aceternity UI",
+    base: "https://ui.aceternity.com/registry",
+    homepage: "https://ui.aceternity.com",
+    license: "MIT (free components); Aceternity Pro is paid",
+    notes: "Only ~116 of 270 listed components are free; the other ~154 are Pro-gated and 401 on fetch. Strongly prefer verified:true so only free, installable components are returned.",
   },
   // Origin UI is intentionally NOT enabled: originui.com serves an HTML app page
   // (Vercel deployment protection, data-dpl-id) for every /r/*.json path instead

@@ -27,7 +27,7 @@ server.registerTool(
   {
     title: "List component registries",
     description:
-      "List the component libraries this server can pull from (id, name, homepage). Call this first to see what is available.",
+      "List the component libraries this server can pull from (id, name, homepage, license, and any notes such as premium/gated warnings). Call this first to see what is available. When a registry's notes mention premium/gated components, use verified:true in search_components to get only installable ones.",
     inputSchema: {},
   },
   async () => ({
@@ -35,7 +35,13 @@ server.registerTool(
       {
         type: "text",
         text: JSON.stringify(
-          REGISTRIES.map((r) => ({ id: r.id, name: r.name, homepage: r.homepage })),
+          REGISTRIES.map((r) => ({
+            id: r.id,
+            name: r.name,
+            homepage: r.homepage,
+            license: r.license,
+            ...(r.notes ? { notes: r.notes } : {}),
+          })),
           null,
           2,
         ),
