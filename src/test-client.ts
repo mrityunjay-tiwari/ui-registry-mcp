@@ -38,8 +38,8 @@ async function main() {
   // --- list_registries ---
   console.log("\n# list_registries");
   const regs = jsonOf(await client.callTool({ name: "list_registries", arguments: {} }));
-  check("returns >= 6 registries", Array.isArray(regs) && regs.length >= 6, `count=${regs.length}`);
-  check("includes reui + kibo + aceternity + tailark", ["reui", "kibo", "aceternity", "tailark"].every((id) => regs.some((r: any) => r.id === id)));
+  check("returns >= 7 registries", Array.isArray(regs) && regs.length >= 7, `count=${regs.length}`);
+  check("includes reui + kibo + aceternity + tailark + cult-ui", ["reui", "kibo", "aceternity", "tailark", "cult-ui"].every((id) => regs.some((r: any) => r.id === id)));
   check("every registry reports a license", regs.every((r: any) => typeof r.license === "string" && r.license.length > 0));
   check("gated registries carry a premium notes warning", ["reui", "aceternity"].every((id) => regs.find((r: any) => r.id === id)?.notes?.length > 0),
     JSON.stringify(regs.filter((r: any) => r.notes).map((r: any) => r.id)));

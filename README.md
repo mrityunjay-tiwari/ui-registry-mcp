@@ -26,11 +26,12 @@ flags design clashes before they ship.
 | `reui`       | ReUI          | https://reui.io           | ~1534   | MIT free comps; **some pro blocks 401** — use `verified:true` |
 | `aceternity` | Aceternity UI | https://ui.aceternity.com | 270 listed / **~116 free** | MIT free comps; **154 are Pro-gated (401)** — use `verified:true` |
 | `tailark`    | Tailark       | https://tailark.com       | ~210    | **MIT, free** (Pro is a separate product we don't serve) |
+| `cult-ui`    | Cult UI       | https://www.cult-ui.com   | ~157    | **MIT, free** |
 | `smoothui`   | SmoothUI      | https://smoothui.dev      | ~107    | **MIT, free** |
 | `kibo`       | Kibo UI       | https://www.kibo-ui.com   | ~41     | **MIT, free** |
 | `kokonut`    | Kokonut UI    | https://kokonutui.com     | ~40     | **MIT, free** |
 
-**~2,200 components across 6 libraries.** Add more in
+**~2,360 components across 7 libraries.** Add more in
 [`src/registries.ts`](src/registries.ts) — one entry per shadcn registry,
 nothing else changes.
 

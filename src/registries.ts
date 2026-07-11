@@ -65,6 +65,13 @@ export const REGISTRIES: Registry[] = [
     license: "MIT",
   },
   {
+    id: "cult-ui",
+    name: "Cult UI",
+    base: "https://www.cult-ui.com/r",
+    homepage: "https://www.cult-ui.com",
+    license: "MIT (all 157 components free)",
+  },
+  {
     // Note: aceternity serves its index at /registry/registry.json and components
     // at /registry/{name}.json, so the base is the "/registry" path (not "/r").
     id: "aceternity",
@@ -74,11 +81,14 @@ export const REGISTRIES: Registry[] = [
     license: "MIT (free components); Aceternity Pro is paid",
     notes: "Only ~116 of 270 listed components are free; the other ~154 are Pro-gated and 401 on fetch. Strongly prefer verified:true so only free, installable components are returned.",
   },
-  // Origin UI is intentionally NOT enabled: originui.com serves an HTML app page
-  // (Vercel deployment protection, data-dpl-id) for every /r/*.json path instead
-  // of registry JSON, so there is no public static endpoint to fetch. Revisit if
-  // they publish a JSON registry or a CDN mirror.
-  // { id: "origin", name: "Origin UI", base: "https://originui.com/r", homepage: "https://originui.com" },
+  // --- Probed but NOT enabled (no fetchable static JSON registry) ---
+  // Origin UI: originui.com serves an HTML app page (Vercel deployment protection)
+  //   for every /r/*.json path instead of registry JSON.
+  // PatternCraft: patterncraft.fun serves an HTML SPA (window.onload=...) for every
+  //   path including /r/{name}.json — no static registry endpoint.
+  // Motion Primitives: motion-primitives.com returns 429 (rate-limited) with an
+  //   Astro HTML page on every registry path — no accessible JSON registry.
+  // Revisit any of these if they publish a real JSON registry / CDN mirror.
 ];
 
 export function getRegistry(id: string): Registry | undefined {
