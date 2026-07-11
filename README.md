@@ -57,7 +57,8 @@ nothing else changes.
 | --- | --- |
 | **`list_registries`** | The libraries available (id, name, homepage). |
 | **`search_components(query, registry?, type?, verified?, limit?)`** | Token-ranked, **synonym-aware** cross-library search (`modal`→`dialog`, `dropdown`→`select`, …). Returns names + one-liners, _not_ source, so it never floods context. `type` filters to `ui` / `block` / `component` / `hook` (`ui` spans single components across libraries). `verified:true` fetch-checks results and returns only **installable** ones (drops premium/gated items — slower). Empty result = `[]`. |
-| **`get_component(registry, name)`** | Full current source (file contents), npm + registry dependencies, and the exact `npx shadcn add …` command. |
+| **`get_component(registry, name)`** | Full current source (file contents), npm + registry dependencies, the exact `npx shadcn add …` command, plus **provenance** — `sourceUrl` (direct registry JSON URL), `homepage`, `license`, and a ready-to-show `attribution` string so the agent can credit the source. |
+| **`list_components(registry?, type?, offset?, limit?)`** | The full component **directory** — every component with its **direct URL** (registry JSON / install URL). Paginated. Filter by registry/type. |
 | **`compare_components(query, registries?)`** | The best match for an intent from _each_ library, side by side: deps, file count, LOC, install command, source preview — so the agent picks the nicest, not the first. |
 | **`check_consistency(components[])`** | ⭐ Static design-clash analysis across a mixed set: inconsistent border-radius scales, hardcoded colors vs theme tokens (**with auto-suggested remappings** like `text-zinc-900 → text-foreground`), dark-mode risk (only flags components that hardcode colors *and* lack `dark:` — token-based ones count as dark-capable), arbitrary spacing/font values off the scale, and conflicting icon/animation libs. Findings come with concrete per-component pointers. |
 
@@ -103,8 +104,9 @@ consistency pass.
 ```bash
 npm install
 npm run build
-npm test          # full MCP handshake + assertions across all 5 tools
+npm test          # full MCP handshake + assertions across all tools
 npm run smoke     # hits the registries, prints index sizes + a sample fetch
+npm run catalog   # snapshot the full directory to catalog.json (every component + direct URL)
 ```
 
 ## How it works

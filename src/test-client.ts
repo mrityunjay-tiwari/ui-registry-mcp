@@ -36,7 +36,7 @@ async function main() {
 
   const tools = (await client.listTools()).tools.map((t) => t.name);
   console.log("\n# Tools registered:", tools.join(", "));
-  for (const t of ["list_registries", "search_components", "get_component", "compare_components", "check_consistency"]) {
+  for (const t of ["list_registries", "search_components", "get_component", "compare_components", "check_consistency", "list_components"]) {
     check(`tool exists: ${t}`, tools.includes(t));
   }
 
@@ -107,6 +107,17 @@ async function main() {
   check("has install command", typeof comp.installCommand === "string" && comp.installCommand.includes("shadcn"));
   check("returns file(s) with content", Array.isArray(comp.files) && comp.files.length > 0 && comp.files[0].content.length > 50,
     `files=${comp.files?.length}`);
+  // Provenance / attribution
+  check("get_component includes direct sourceUrl", typeof comp.sourceUrl === "string" && comp.sourceUrl.startsWith("http") && comp.sourceUrl.endsWith(".json"), comp.sourceUrl);
+  check("get_component includes an attribution string", typeof comp.attribution === "string" && comp.attribution.includes(comp.registryName) && comp.attribution.includes("source:"),
+    comp.attribution);
+
+  // --- list_components: full directory with direct URLs ---
+  console.log("\n# list_components (directory)");
+  const dir = jsonOf(await client.callTool({ name: "list_components", arguments: { registry: "kibo", limit: 5 } }));
+  console.log(`  total=${dir.total} returned=${dir.count}  sample: ${dir.components[0]?.registry}/${dir.components[0]?.name} -> ${dir.components[0]?.url}`);
+  check("directory returns entries with direct URLs", dir.count > 0 && dir.components.every((c: any) => c.url?.startsWith("http") && c.url.endsWith(".json")));
+  check("directory reports a total + is paginated", typeof dir.total === "number" && dir.total >= dir.count && dir.count <= 5);
 
   // --- get_component: bad name errors gracefully ---
   const bad = await client.callTool({ name: "get_component", arguments: { registry: "reui", name: "definitely-not-a-real-component-xyz" } });

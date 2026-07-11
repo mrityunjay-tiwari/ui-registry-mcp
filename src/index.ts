@@ -3,11 +3,12 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 
-import { REGISTRIES, getRegistry, installCommand } from "./registries.js";
+import { REGISTRIES, getRegistry, installCommand, componentUrl } from "./registries.js";
 import { getItem } from "./fetcher.js";
 import { searchComponents } from "./search.js";
 import { compareComponents } from "./compare.js";
 import { checkConsistency } from "./consistency.js";
+import { listComponents } from "./catalog.js";
 
 /**
  * Server-level instructions. The MCP client surfaces this to the model as
@@ -25,6 +26,8 @@ const INSTRUCTIONS = `This server gives you live access to 11 shadcn-style compo
 4. FETCH with get_component to get the real source + the exact 'npx shadcn add' command. Install or drop the files into the user's project and edit freely.
 
 5. POLISH. Whenever you combine components from more than one library, ALWAYS run check_consistency on the set and apply its suggestions (token remappings like text-zinc-900 -> text-foreground, a single border-radius scale, dark-mode fixes) before you finish. This is what makes mixed-library UI feel like one design system.
+
+6. ATTRIBUTE. Whenever you use or adapt a component, TELL THE USER where it came from: the library name and the component's direct source URL (get_component returns 'attribution' and 'sourceUrl' for exactly this). This lets the user credit and inspect the original. Prefer components you can attribute over inventing UI from scratch. Use list_components to browse the full directory of available components with their direct URLs.
 
 Keep your judgment in charge of what to use and how to compose; use these tools for the raw material and the consistency check.`;
 
@@ -126,12 +129,19 @@ server.registerTool(
     }
     try {
       const item = await getItem(reg, name);
+      const source = componentUrl(reg, name);
       const payload = {
         registry: reg.id,
+        registryName: reg.name,
         name: item.name,
         type: item.type,
         title: item.title,
         description: item.description,
+        // Provenance — surface this to the user so they can credit / inspect the source.
+        sourceUrl: source,
+        homepage: reg.homepage,
+        license: reg.license,
+        attribution: `"${item.title || item.name}" from ${reg.name} (${reg.homepage}) — source: ${source}`,
         dependencies: item.dependencies ?? [],
         registryDependencies: item.registryDependencies ?? [],
         installCommand: installCommand(reg, name),
@@ -203,6 +213,25 @@ server.registerTool(
   async ({ components }) => {
     const report = await checkConsistency(components);
     return { content: [{ type: "text", text: JSON.stringify(report, null, 2) }] };
+  },
+);
+
+server.registerTool(
+  "list_components",
+  {
+    title: "List the full component directory",
+    description:
+      "Browse the complete directory of every component across all libraries, each with its DIRECT URL (the registry JSON / shadcn install URL). Paginated — thousands of entries. Filter by registry and/or type, and page with offset/limit. Use this to enumerate what exists or to fetch a component's canonical source URL for attribution.",
+    inputSchema: {
+      registry: z.string().optional().describe("Optional registry id to restrict to one library"),
+      type: z.string().optional().describe("Optional type filter: 'ui' | 'block' | 'component' | 'hook'"),
+      offset: z.number().int().nonnegative().optional().describe("Pagination offset (default 0)"),
+      limit: z.number().int().positive().max(1000).optional().describe("Max entries per page (default 200)"),
+    },
+  },
+  async ({ registry, type, offset, limit }) => {
+    const result = await listComponents({ registry, type, offset, limit });
+    return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
   },
 );
 
