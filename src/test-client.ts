@@ -5,6 +5,9 @@
  */
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { createRequire } from "node:module";
+
+const pkg = createRequire(import.meta.url)("../package.json") as { version: string };
 
 let passed = 0;
 let failed = 0;
@@ -33,6 +36,10 @@ async function main() {
   const instructions = client.getInstructions();
   check("server delivers workflow instructions", typeof instructions === "string" && /UNDERSTAND FIRST|check_consistency/.test(instructions),
     `len=${instructions?.length}`);
+
+  // Server version should track package.json (no drift).
+  const serverVersion = client.getServerVersion();
+  check("server version matches package.json", serverVersion?.version === pkg.version, `server=${serverVersion?.version} pkg=${pkg.version}`);
 
   const tools = (await client.listTools()).tools.map((t) => t.name);
   console.log("\n# Tools registered:", tools.join(", "));

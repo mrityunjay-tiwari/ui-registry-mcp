@@ -2,6 +2,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
+import { createRequire } from "node:module";
 
 import { REGISTRIES, getRegistry, installCommand, componentUrl } from "./registries.js";
 import { getItem } from "./fetcher.js";
@@ -31,10 +32,16 @@ const INSTRUCTIONS = `This server gives you live access to 11 shadcn-style compo
 
 Keep your judgment in charge of what to use and how to compose; use these tools for the raw material and the consistency check.`;
 
+// Read version from package.json so the server always reports the real version
+// (dist/index.js -> ../package.json resolves to the package root at runtime).
+const { version: PKG_VERSION } = createRequire(import.meta.url)("../package.json") as {
+  version: string;
+};
+
 const server = new McpServer(
   {
     name: "ui-registry-mcp",
-    version: "0.4.0",
+    version: PKG_VERSION,
   },
   { instructions: INSTRUCTIONS },
 );
@@ -111,7 +118,7 @@ server.registerTool(
   {
     title: "Get a component's real source",
     description:
-      "Fetch the full, current source of one component from a specific library: file contents, npm dependencies, registry dependencies, and the exact install command. Use this after search_components. The returned source is real code you can drop into the project and edit freely.",
+      "Fetch the full, current source of one component from a specific library: file contents, npm dependencies, registry dependencies, and the exact install command. Use this after search_components. The returned source is real code you can drop into the project and edit freely. IMPORTANT: relay the returned 'attribution' line to the user so they know which library and source URL the component came from.",
     inputSchema: {
       registry: z.string().describe("Registry id, e.g. 'reui' (see list_registries)"),
       name: z.string().describe("Component name exactly as returned by search_components"),
@@ -131,17 +138,17 @@ server.registerTool(
       const item = await getItem(reg, name);
       const source = componentUrl(reg, name);
       const payload = {
+        // Provenance FIRST — relay this to the user so they can credit / inspect the source.
+        attribution: `"${item.title || item.name}" from ${reg.name} (${reg.homepage}) — source: ${source}`,
+        sourceUrl: source,
+        homepage: reg.homepage,
+        license: reg.license,
         registry: reg.id,
         registryName: reg.name,
         name: item.name,
         type: item.type,
         title: item.title,
         description: item.description,
-        // Provenance — surface this to the user so they can credit / inspect the source.
-        sourceUrl: source,
-        homepage: reg.homepage,
-        license: reg.license,
-        attribution: `"${item.title || item.name}" from ${reg.name} (${reg.homepage}) — source: ${source}`,
         dependencies: item.dependencies ?? [],
         registryDependencies: item.registryDependencies ?? [],
         installCommand: installCommand(reg, name),
@@ -221,7 +228,7 @@ server.registerTool(
   {
     title: "List the full component directory",
     description:
-      "Browse the complete directory of every component across all libraries, each with its DIRECT URL (the registry JSON / shadcn install URL). Paginated — thousands of entries. Filter by registry and/or type, and page with offset/limit. Use this to enumerate what exists or to fetch a component's canonical source URL for attribution.",
+      "Browse the complete directory of every component across all libraries, each with its DIRECT URL (the registry JSON / shadcn install URL). Paginated — thousands of entries. Filter by registry and/or type, and page with offset/limit. Use this to enumerate what exists or to fetch a component's canonical source URL for attribution. Note: the directory includes premium/gated components too — some URLs 401 on install; use search_components(verified:true) when you need installable-only results.",
     inputSchema: {
       registry: z.string().optional().describe("Optional registry id to restrict to one library"),
       type: z.string().optional().describe("Optional type filter: 'ui' | 'block' | 'component' | 'hook'"),

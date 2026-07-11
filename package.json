@@ -1,6 +1,6 @@
 {
   "name": "ui-registry-mcp",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "MCP server that gives coding agents live access to 11 shadcn-style component registries (reui, watermelon, aceternity, tailark, cult-ui, smoothui, optics, beui, kibo, kokonut, uselayouts) so they discover, compare, fetch, and design-check real UI components instead of rebuilding them.",
   "type": "module",
   "bin": {

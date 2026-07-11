@@ -1,71 +1,22 @@
 # ui-registry-mcp
 
-An MCP server that gives coding agents (Claude Code, Cursor, Windsurf, …) **live
-access to shadcn-style component registries** so they compose UI from real,
-polished open-source components instead of rebuilding them from scratch.
+Coding agents are great at logic and not so good at taste. Ask one to build a
+pricing page and it'll hand-roll a flat, generic card from memory - when there
+are thousands of beautiful, open-source components sitting one
+fetch away that too built by people who are great UI/UX experts.
 
-The agent stays in charge of judgment — _what_ to use, _how_ to compose, _what_
-to edit. This server just hands it the raw material at the moment it asks, and
-flags design clashes before they ship.
+This is an [MCP](https://modelcontextprotocol.io) server that closes that gap.
+It plugs into Claude Code, Cursor, Windsurf, or any MCP client and lets the agent
+**reach into 11 real component libraries** — search them, pull the actual source,
+compare options, and check that everything looks like it belongs together — while
+you stay in your editor.
 
-## The loop
+The idea is simple: the agent keeps the judgment (what to use, how to compose,
+what to tweak). The libraries keep the craft. This server is just the bridge.
 
-```
-"build a pricing page"
-  → search_components("pricing")        # ranked matches across all libraries (no source)
-  → compare_components("pricing table") # best match from each library, side by side
-  → get_component("reui", "form-12")    # the REAL .tsx source + deps + install cmd
-  → agent uses / edits it in your project
-  → check_consistency([...])            # radius / color-token / dark-mode / dep clashes
-```
+## Quick start
 
-## Libraries (live)
-
-| id           | name          | source                    | approx. | license / notes |
-| ------------ | ------------- | ------------------------- | ------- | --------------- |
-| `reui`       | ReUI          | https://reui.io           | ~1534   | MIT free comps; **some pro blocks 401** — use `verified:true` |
-| `watermelon` | Watermelon UI | https://ui.watermelon.sh  | ~1066   | **MIT, free** (web3-heavy) |
-| `aceternity` | Aceternity UI | https://ui.aceternity.com | 270 listed / **~116 free** | MIT free comps; **154 are Pro-gated (401)** — use `verified:true` |
-| `tailark`    | Tailark       | https://tailark.com       | ~210    | **MIT, free** (Pro is a separate product we don't serve) |
-| `cult-ui`    | Cult UI       | https://www.cult-ui.com   | ~157    | **MIT, free** |
-| `smoothui`   | SmoothUI      | https://smoothui.dev      | ~107    | **MIT, free** |
-| `optics`     | Optics        | https://optics.agusmayol.com.ar | ~79 | **MIT, free** (Base UI) |
-| `beui`       | beUI          | https://beui.dev          | ~64     | **MIT, free** |
-| `kibo`       | Kibo UI       | https://www.kibo-ui.com   | ~41     | **MIT, free** |
-| `kokonut`    | Kokonut UI    | https://kokonutui.com     | ~40     | **MIT, free** |
-| `uselayouts` | useLayouts    | https://uselayouts.com    | ~26     | **MIT, free** |
-
-**~3,590 components across 11 libraries.** Add more in
-[`src/registries.ts`](src/registries.ts) — one entry per shadcn registry,
-nothing else changes.
-
-> **Licensing & premium components.** The free components every registry serves
-> here are MIT-licensed and fine for commercial use, but ReUI and Aceternity also
-> list **premium/pro** components in their index that return `401` on fetch.
-> `list_registries` reports each registry's license + a `notes` warning, and
-> `search_components(..., verified:true)` returns only installable (free)
-> components. Always confirm a library's own license before shipping.
-
-> **Origin UI** is intentionally not enabled: `originui.com` serves an HTML app
-> page (Vercel deployment protection) for every `/r/*.json` path rather than
-> registry JSON, so there is no public static endpoint to fetch. Revisit if they
-> publish a JSON registry or CDN mirror.
-
-## Tools
-
-| tool | what it does |
-| --- | --- |
-| **`list_registries`** | The libraries available (id, name, homepage). |
-| **`search_components(query, registry?, type?, verified?, limit?)`** | Token-ranked, **synonym-aware** cross-library search (`modal`→`dialog`, `dropdown`→`select`, …). Returns names + one-liners, _not_ source, so it never floods context. `type` filters to `ui` / `block` / `component` / `hook` (`ui` spans single components across libraries). `verified:true` fetch-checks results and returns only **installable** ones (drops premium/gated items — slower). Empty result = `[]`. |
-| **`get_component(registry, name)`** | Full current source (file contents), npm + registry dependencies, the exact `npx shadcn add …` command, plus **provenance** — `sourceUrl` (direct registry JSON URL), `homepage`, `license`, and a ready-to-show `attribution` string so the agent can credit the source. |
-| **`list_components(registry?, type?, offset?, limit?)`** | The full component **directory** — every component with its **direct URL** (registry JSON / install URL). Paginated. Filter by registry/type. |
-| **`compare_components(query, registries?)`** | The best match for an intent from _each_ library, side by side: deps, file count, LOC, install command, source preview — so the agent picks the nicest, not the first. |
-| **`check_consistency(components[])`** | ⭐ Static design-clash analysis across a mixed set: inconsistent border-radius scales, hardcoded colors vs theme tokens (**with auto-suggested remappings** like `text-zinc-900 → text-foreground`), dark-mode risk (only flags components that hardcode colors *and* lack `dark:` — token-based ones count as dark-capable), arbitrary spacing/font values off the scale, and conflicting icon/animation libs. Findings come with concrete per-component pointers. |
-
-## Connect to Claude Code
-
-**Published (recommended)** — no clone, no build. Add to `.mcp.json` in your
-project (or run `claude mcp add ui-registry -- npx -y ui-registry-mcp`):
+No cloning, no build. Point your MCP client at the published package:
 
 ```json
 {
@@ -78,52 +29,141 @@ project (or run `claude mcp add ui-registry -- npx -y ui-registry-mcp`):
 }
 ```
 
-**From a local clone** (for development):
+(In Claude Code you can also just run `claude mcp add ui-registry -- npx -y ui-registry-mcp`.)
 
-```json
-{
-  "mcpServers": {
-    "ui-registry": {
-      "command": "node",
-      "args": ["/absolute/path/to/ui-registry-mcp/dist/index.js"]
-    }
-  }
-}
-```
+Then ask for UI as:
 
-Then just ask, e.g.:
+> "Build a cool pricing section - look across the libraries and pick the best component or tweaking them makes up a great pricing page."
+>
+> "Add a data table and make sure it matches the card above."
 
-- _"Build a pricing section using components from the registry — compare options across libraries first."_
-- _"Add a data table from the registry and check it's design-consistent with the card above."_
+Behind the scenes the agent searches, compares, pulls real code into your
+project, and does a quick design-consistency pass before it's done. It'll also
+tell you which library each piece came from, so you can credit and inspect the
+original.
 
-The agent will search, (compare,) fetch real source, edit as needed, and run a
-consistency pass.
+## What's inside
 
-## Local development
+Eleven libraries, roughly **3,600 components**, all fetched live — so you always
+get the current version, never a stale copy.
+
+| Library | Components | Notes |
+| --- | --- | --- |
+| [ReUI](https://reui.io) | ~1,534 | Huge range; some blocks are paid — the server filters those out |
+| [Watermelon UI](https://ui.watermelon.sh) | ~1,066 | Large set, leans web3/DeFi |
+| [Aceternity UI](https://ui.aceternity.com) | ~116 free | Animated, 3D, bento; most of its catalog is Pro |
+| [Tailark](https://tailark.com) | ~210 | Marketing sections — hero, pricing, testimonials |
+| [Cult UI](https://www.cult-ui.com) | ~157 | Design-engineer components with motion |
+| [SmoothUI](https://smoothui.dev) | ~107 | Micro-interactions |
+| [Optics](https://optics.agusmayol.com.ar) | ~79 | Accessible, built on Base UI |
+| [beUI](https://beui.dev) | ~64 | Motion toolkit |
+| [Kibo UI](https://www.kibo-ui.com) | ~41 | Data-heavy — tables, kanban, gantt |
+| [Kokonut UI](https://kokonutui.com) | ~40 | Flashy standalone cards |
+| [useLayouts](https://uselayouts.com) | ~26 | Animated layouts |
+
+Everything the server hands you is **MIT-licensed and free for commercial use**.
+A couple of libraries (ReUI, Aceternity) also list *premium* components in their
+catalog — those quietly fail to install. You don't have to think about it: ask
+for `verified` results and the server only returns things you can actually use.
+Still, check a library's own license before you ship.
+
+Adding another library is one entry in [`src/registries.ts`](src/registries.ts)
+if it exposes a standard shadcn registry — nothing else changes.
+
+## The tools
+
+Six tools, meant to be used roughly in this order:
+
+- **`list_registries`** — what libraries are available, with their licenses and
+  any "heads up, this one has paid components" notes.
+- **`search_components`** — describe what you want in plain words. It understands
+  synonyms (ask for a "modal", it finds "dialog"), and returns just names and
+  one-line descriptions so it never dumps a wall of code into the conversation.
+  Add `verified` when you only want components that are actually installable.
+- **`compare_components`** — the same idea (say, a "pricing table") pulled from
+  every library at once, side by side, so the agent picks the best one instead
+  of the first one.
+- **`get_component`** — the real source for one component: every file, its
+  dependencies, the exact `npx shadcn add` command, and where it came from.
+- **`check_consistency`** — the part that makes mixed components feel like one
+  design. It reads the actual code and flags the little clashes — one component
+  rounds its corners more than another, one hardcodes `zinc-900` where the rest
+  use your theme, one forgot dark mode — and suggests the fix for each.
+- **`list_components`** — the full directory, every component with its direct
+  URL, if you want to browse or link to sources.
+
+---
+
+## Under the hood
+
+If you just want to use it, everything above is enough. What follows is the how
+and the why — for the curious, and for anyone thinking about contributing.
+
+### The design decisions
+
+A few choices worth explaining, because they're the difference between a demo
+and something you'd actually keep installed:
+
+- **It fetches live instead of mirroring.** These libraries ship updates
+  constantly. A cached copy would rot; pulling from each registry's own endpoint
+  means you always get today's version. A short in-memory cache keeps it snappy
+  within a session.
+- **It's honest about paid components.** Rather than let the agent confidently
+  pick something that 401s on install, premium items are flagged up front and
+  filterable. Nothing worse than an agent that recommends what it can't deliver.
+- **Consistency is the real value, not just fetching.** Anyone can wrap a
+  registry. The thing that actually makes agent-built UI look designed is
+  catching the token/spacing/radius drift when you mix sources — so that's a
+  first-class tool, not an afterthought.
+- **It gives credit.** Every component comes back with its source URL and a
+  ready-to-show attribution line, and the agent is told to pass that on. You
+  should always know whose work you're building on.
+- **One dead library can't sink a search.** Requests retry on hiccups, and a
+  registry being down just drops it from the results instead of failing the
+  whole call.
+
+### Local development
 
 ```bash
 npm install
 npm run build
-npm test          # full MCP handshake + assertions across all tools
-npm run smoke     # hits the registries, prints index sizes + a sample fetch
-npm run catalog   # snapshot the full directory to catalog.json (every component + direct URL)
+npm test          # spins up the server and exercises every tool end-to-end
+npm run smoke      # quick check that all the registries are reachable
+npm run catalog    # dump the whole directory to catalog.json
 ```
 
-## How it works
+### Roadmap — honest about what's next
 
-- **Live fetch** with a small in-process TTL cache (`UI_REGISTRY_TTL_MS`, default
-  5 min) — no maintained local mirror; every value comes from the registry JSON.
-- **Resilient**: transient/5xx failures retry with backoff (`UI_REGISTRY_RETRIES`,
-  default 2); a single dead registry can't break a cross-library search.
-- **Browser-like `User-Agent`** gets past most bot-blocking.
-- **Premium components**: some registries list pro/gated components in their index
-  that return `401` when fetched (e.g. many reui `stats-*`, `faq-*`, `form-*`,
-  bare-named blocks; free examples are usually `c-*`-prefixed). `get_component`
-  reports these clearly, and `search_components(..., verified:true)` filters them
-  out so the agent only sees installable results.
+It's genuinely useful today, but two things would take it further, and both are
+real projects rather than quick wins:
 
-## Next steps
+- **Visual previews.** You pick UI with your eyes, and right now the agent picks
+  from text. The catch: these libraries don't expose preview images
+  consistently, so doing this properly means rendering and screenshotting
+  components — infrastructure, not a config flag.
+- **Meaning-based search.** Search understands synonyms today, but not intent
+  like "something friendly for an onboarding screen." Real embeddings would fix
+  that.
 
-- Add more registries (Aceternity, Magic UI, Cult UI, …) — one entry each.
-- `check_consistency`: a "scan my local project" mode (audit already-installed files).
-- Embedding-based search (beyond the curated synonym list) for fuzzier intents.
+---
+
+## Feedback & contributing
+
+This exists so an agent can build UI that doesn't look like every other agent's
+UI — and it gets better every time someone actually uses it and tells me what
+broke or what was missing. If you hit a rough edge, have a feature idea, or know
+a library that belongs in here, please
+[open an issue](https://github.com/mrityunjay-tiwari/ui-registry-mcp/issues). I
+genuinely want to hear it.
+
+Pull requests are very welcome — especially **new registries** (usually a
+few-line addition in [`src/registries.ts`](src/registries.ts)) and better
+consistency checks. And if it saved you some time, a ⭐ on the repo means a lot
+and helps other people find it.
+
+A real thank-you to the teams behind the libraries this stands on — ReUI,
+Aceternity, Tailark, Cult UI, SmoothUI, Optics, beUI, Kibo, Kokonut, useLayouts,
+Watermelon — and to the shadcn registry ecosystem that makes them all fit
+together. This is a bridge to their craft; none of it works without them.
+
+MIT licensed.
