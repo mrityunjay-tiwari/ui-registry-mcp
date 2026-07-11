@@ -24,16 +24,18 @@ flags design clashes before they ship.
 | id           | name          | source                    | approx. | license / notes |
 | ------------ | ------------- | ------------------------- | ------- | --------------- |
 | `reui`       | ReUI          | https://reui.io           | ~1534   | MIT free comps; **some pro blocks 401** — use `verified:true` |
+| `watermelon` | Watermelon UI | https://ui.watermelon.sh  | ~1066   | **MIT, free** (web3-heavy) |
 | `aceternity` | Aceternity UI | https://ui.aceternity.com | 270 listed / **~116 free** | MIT free comps; **154 are Pro-gated (401)** — use `verified:true` |
 | `tailark`    | Tailark       | https://tailark.com       | ~210    | **MIT, free** (Pro is a separate product we don't serve) |
 | `cult-ui`    | Cult UI       | https://www.cult-ui.com   | ~157    | **MIT, free** |
 | `smoothui`   | SmoothUI      | https://smoothui.dev      | ~107    | **MIT, free** |
 | `optics`     | Optics        | https://optics.agusmayol.com.ar | ~79 | **MIT, free** (Base UI) |
+| `beui`       | beUI          | https://beui.dev          | ~64     | **MIT, free** |
 | `kibo`       | Kibo UI       | https://www.kibo-ui.com   | ~41     | **MIT, free** |
 | `kokonut`    | Kokonut UI    | https://kokonutui.com     | ~40     | **MIT, free** |
 | `uselayouts` | useLayouts    | https://uselayouts.com    | ~26     | **MIT, free** |
 
-**~2,460 components across 9 libraries.** Add more in
+**~3,590 components across 11 libraries.** Add more in
 [`src/registries.ts`](src/registries.ts) — one entry per shadcn registry,
 nothing else changes.
 

@@ -87,6 +87,22 @@ export const REGISTRIES: Registry[] = [
     notes: "Built on Base UI primitives (not Radix), Tailwind v4. Index includes a few registry:lib / registry:file utility items alongside components.",
   },
   {
+    id: "watermelon",
+    name: "Watermelon UI",
+    base: "https://registry.watermelon.sh/r",
+    homepage: "https://ui.watermelon.sh",
+    license: "MIT (all free)",
+    notes: "Very large (~1066 components), React 19 + Tailwind v4 + Radix. Includes many web3/DeFi-specific components (swap widgets, wallet UIs) alongside general ones.",
+  },
+  {
+    id: "beui",
+    name: "beUI",
+    base: "https://beui.dev/r",
+    homepage: "https://beui.dev",
+    license: "MIT (all free)",
+    notes: "Motion toolkit (Framer Motion) for React/Next. Some components ship multiple files.",
+  },
+  {
     // Note: aceternity serves its index at /registry/registry.json and components
     // at /registry/{name}.json, so the base is the "/registry" path (not "/r").
     id: "aceternity",
@@ -107,6 +123,11 @@ export const REGISTRIES: Registry[] = [
   //   exposes NO registry.json index, so we can't enumerate/search it. Revisit if
   //   they publish an index.
   // Hostinger Horizon: no locatable shadcn registry endpoint found.
+  // Vengeance UI (vengenceui.com): components work, but registry.json is a bare
+  //   numeric-keyed object (not {items:[]}) AND the license is unverified. Would
+  //   need index normalization + license confirmation before enabling.
+  // Kairo UI: no locatable shadcn registry endpoint found.
+  // "studio": ambiguous name, no single clear registry identified.
   // Revisit any of these if they publish a real JSON registry / CDN mirror.
 ];
 

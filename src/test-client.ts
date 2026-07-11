@@ -29,6 +29,11 @@ async function main() {
   const client = new Client({ name: "test-client", version: "0.0.1" });
   await client.connect(transport);
 
+  // Server-level workflow instructions (how we "direct" the agent).
+  const instructions = client.getInstructions();
+  check("server delivers workflow instructions", typeof instructions === "string" && /UNDERSTAND FIRST|check_consistency/.test(instructions),
+    `len=${instructions?.length}`);
+
   const tools = (await client.listTools()).tools.map((t) => t.name);
   console.log("\n# Tools registered:", tools.join(", "));
   for (const t of ["list_registries", "search_components", "get_component", "compare_components", "check_consistency"]) {
@@ -38,8 +43,8 @@ async function main() {
   // --- list_registries ---
   console.log("\n# list_registries");
   const regs = jsonOf(await client.callTool({ name: "list_registries", arguments: {} }));
-  check("returns >= 9 registries", Array.isArray(regs) && regs.length >= 9, `count=${regs.length}`);
-  check("includes all newly added registries", ["reui", "kibo", "aceternity", "tailark", "cult-ui", "optics", "uselayouts"].every((id) => regs.some((r: any) => r.id === id)));
+  check("returns >= 11 registries", Array.isArray(regs) && regs.length >= 11, `count=${regs.length}`);
+  check("includes all newly added registries", ["reui", "kibo", "aceternity", "tailark", "cult-ui", "optics", "uselayouts", "watermelon", "beui"].every((id) => regs.some((r: any) => r.id === id)));
   check("every registry reports a license", regs.every((r: any) => typeof r.license === "string" && r.license.length > 0));
   check("gated registries carry a premium notes warning", ["reui", "aceternity"].every((id) => regs.find((r: any) => r.id === id)?.notes?.length > 0),
     JSON.stringify(regs.filter((r: any) => r.notes).map((r: any) => r.id)));
