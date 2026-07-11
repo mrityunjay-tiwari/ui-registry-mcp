@@ -28,10 +28,12 @@ flags design clashes before they ship.
 | `tailark`    | Tailark       | https://tailark.com       | ~210    | **MIT, free** (Pro is a separate product we don't serve) |
 | `cult-ui`    | Cult UI       | https://www.cult-ui.com   | ~157    | **MIT, free** |
 | `smoothui`   | SmoothUI      | https://smoothui.dev      | ~107    | **MIT, free** |
+| `optics`     | Optics        | https://optics.agusmayol.com.ar | ~79 | **MIT, free** (Base UI) |
 | `kibo`       | Kibo UI       | https://www.kibo-ui.com   | ~41     | **MIT, free** |
 | `kokonut`    | Kokonut UI    | https://kokonutui.com     | ~40     | **MIT, free** |
+| `uselayouts` | useLayouts    | https://uselayouts.com    | ~26     | **MIT, free** |
 
-**~2,360 components across 7 libraries.** Add more in
+**~2,460 components across 9 libraries.** Add more in
 [`src/registries.ts`](src/registries.ts) — one entry per shadcn registry,
 nothing else changes.
 

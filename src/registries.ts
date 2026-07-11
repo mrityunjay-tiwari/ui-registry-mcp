@@ -72,6 +72,21 @@ export const REGISTRIES: Registry[] = [
     license: "MIT (all 157 components free)",
   },
   {
+    id: "uselayouts",
+    name: "useLayouts",
+    base: "https://uselayouts.com/r",
+    homepage: "https://uselayouts.com",
+    license: "MIT (100% free, no paid tier)",
+  },
+  {
+    id: "optics",
+    name: "Optics",
+    base: "https://optics.agusmayol.com.ar/r",
+    homepage: "https://optics.agusmayol.com.ar",
+    license: "MIT (all free)",
+    notes: "Built on Base UI primitives (not Radix), Tailwind v4. Index includes a few registry:lib / registry:file utility items alongside components.",
+  },
+  {
     // Note: aceternity serves its index at /registry/registry.json and components
     // at /registry/{name}.json, so the base is the "/registry" path (not "/r").
     id: "aceternity",
@@ -88,6 +103,10 @@ export const REGISTRIES: Registry[] = [
   //   path including /r/{name}.json — no static registry endpoint.
   // Motion Primitives: motion-primitives.com returns 429 (rate-limited) with an
   //   Astro HTML page on every registry path — no accessible JSON registry.
+  // Badtz UI: badtz-ui.com serves per-component JSON (/r/{name}.json works) but
+  //   exposes NO registry.json index, so we can't enumerate/search it. Revisit if
+  //   they publish an index.
+  // Hostinger Horizon: no locatable shadcn registry endpoint found.
   // Revisit any of these if they publish a real JSON registry / CDN mirror.
 ];
 
