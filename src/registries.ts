@@ -103,6 +103,14 @@ export const REGISTRIES: Registry[] = [
     notes: "Motion toolkit (Framer Motion) for React/Next. Some components ship multiple files.",
   },
   {
+    id: "ai-elements",
+    name: "AI Elements (Vercel)",
+    base: "https://registry.ai-sdk.dev",
+    homepage: "https://elements.ai-sdk.dev",
+    license: "Apache-2.0 (all free; keep the license notice when shipping)",
+    notes: "Vercel's AI-native components built on shadcn — conversation, message, prompt-input, reasoning, tool-call, code-block, etc. The only library here aimed at chat/agent UIs.",
+  },
+  {
     // Note: aceternity serves its index at /registry/registry.json and components
     // at /registry/{name}.json, so the base is the "/registry" path (not "/r").
     id: "aceternity",
