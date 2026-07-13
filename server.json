@@ -1,0 +1,23 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.mrityunjay-tiwari/ui-registry-mcp",
+  "title": "UI Registry",
+  "description": "Live access to 12 shadcn-style component libraries so agents compose UI from real components.",
+  "version": "0.7.1",
+  "websiteUrl": "https://github.com/mrityunjay-tiwari/ui-registry-mcp",
+  "repository": {
+    "url": "https://github.com/mrityunjay-tiwari/ui-registry-mcp",
+    "source": "github"
+  },
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "ui-registry-mcp",
+      "version": "0.7.1",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}

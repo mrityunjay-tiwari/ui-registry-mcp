@@ -3,6 +3,12 @@
 All notable changes to `ui-registry-mcp`. This project follows
 [semantic versioning](https://semver.org).
 
+## 0.7.1
+
+- Registry submission prep: added `server.json` (official MCP Registry manifest),
+  the `mcpName` field in `package.json` for ownership verification, and
+  `SUBMITTING.md` with step-by-step directory-listing instructions.
+
 ## 0.7.0
 
 - New library: **AI Elements** (Vercel) — 77 chat / AI-native components
