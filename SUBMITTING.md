@@ -19,14 +19,20 @@ real MCP server rather than a stray npm package. Do them roughly in this order.
 
 The canonical one — most other directories index from it.
 
-1. Install the publisher CLI (see the
-   [quickstart](https://modelcontextprotocol.io/registry/quickstart) for your
-   platform; e.g. `brew install mcp-publisher`, or download from the
-   [registry releases](https://github.com/modelcontextprotocol/registry/releases)).
-2. From the repo root (where `server.json` lives):
+1. Install the publisher CLI. It's a standalone binary from the
+   [registry releases](https://github.com/modelcontextprotocol/registry/releases),
+   not an npm package.
+   - **macOS/Linux:** `brew install mcp-publisher`.
+   - **Windows (Git Bash):** download and extract the Windows binary, e.g.
+     ```bash
+     curl -L -o mcp-publisher.tar.gz \
+       https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_windows_amd64.tar.gz
+     tar -xzf mcp-publisher.tar.gz     # yields mcp-publisher.exe
+     ```
+2. From the repo root (where `server.json` lives) — on Windows prefix with `./`:
    ```bash
-   mcp-publisher login github     # opens GitHub OAuth in the browser
-   mcp-publisher publish          # reads server.json and submits
+   ./mcp-publisher.exe login github   # opens GitHub OAuth in the browser
+   ./mcp-publisher.exe publish        # reads server.json and submits
    ```
    GitHub login proves you own the `io.github.mrityunjay-tiwari/*` namespace.
 3. Re-run `mcp-publisher publish` after each new version (bump `server.json`

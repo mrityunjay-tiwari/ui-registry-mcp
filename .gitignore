@@ -4,4 +4,7 @@ dist/
 .DS_Store
 .claude/
 *.tgz
+*.tar.gz
+mcp-publisher
+mcp-publisher.exe
 catalog.json
